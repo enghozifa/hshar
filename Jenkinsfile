@@ -1,12 +1,6 @@
 pipeline {
     agent any
 
-    environment {
-        SSH_KEY = "/var/jenkins_home/.ssh/id_rsa"
-        REMOTE_USER = "azureuser"
-        REMOTE_HOST = "20.81.11.55"
-    }
-
     stages {
 
         stage('Checkout') {
@@ -17,35 +11,33 @@ pipeline {
 
         stage('Build') {
             steps {
-                sh 'echo "Skipping local build (building on VM2)"'
+                sh 'echo "Build step"'
             }
         }
 
         stage('Test') {
             steps {
-                sh 'echo "Running tests..."'
+                sh 'echo "Test step"'
             }
         }
 
-stage('Deploy') {
-    when {
-        branch 'master'
-    }
-    steps {
-        sh """
-        ssh -o StrictHostKeyChecking=no \
-        -i /var/jenkins_home/.ssh/id_rsa \
-        azureuser@20.81.11.55 '
-        
-        cd website || git clone https://github.com/enghozifa/hshar.git website &&
-        cd website &&
-        git pull origin master || true &&
-        
-        docker build -t capstone:${BUILD_NUMBER} . &&
-        docker stop capstone || true &&
-        docker rm capstone || true &&
-        docker run -d -p 80:80 --name capstone capstone:${BUILD_NUMBER}
-               "
+        stage('Deploy') {
+            when {
+                branch 'master'
+            }
+            steps {
+                sh '''
+                ssh -o StrictHostKeyChecking=no \
+                -i /var/jenkins_home/.ssh/id_rsa \
+                azureuser@20.81.11.55 "
+                cd website || git clone https://github.com/enghozifa/hshar.git website &&
+                cd website &&
+                git pull origin master || true &&
+                docker build -t capstone:${BUILD_NUMBER} . &&
+                docker stop capstone || true &&
+                docker rm capstone || true &&
+                docker run -d -p 80:80 --name capstone capstone:${BUILD_NUMBER}
+                "
                 '''
             }
         }
