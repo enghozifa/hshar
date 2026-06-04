@@ -21,37 +21,40 @@ pipeline {
             }
         }
 
-        stage('Deploy') {
-            when {
-                branch 'master'
-            }
-            steps {
-                sh '''
-                ssh -o StrictHostKeyChecking=no \
-                -i /var/jenkins_home/.ssh/id_rsa \
-                azureuser@20.81.11.55 << 'EOF'
+stage('Deploy') {
+    when {
+        branch 'master'
+    }
+    steps {
+        sh '''
+        ssh -o StrictHostKeyChecking=no \
+        -i /var/jenkins_home/.ssh/id_rsa \
+        azureuser@20.81.11.55 << 'EOF'
 
-                set -e
+        set -e
 
-                echo "Deploying..."
+        echo "Deploying..."
 
-                if [ ! -d website ]; then
-                    git clone https://github.com/enghozifa/hshar.git website
-                fi
+        if [ ! -d website ]; then
+            git clone https://github.com/enghozifa/hshar.git website
+        fi
 
-                cd website
-                git pull origin master || true
+        cd website
 
-                docker stop capstone || true
-                docker rm capstone || true
+        git pull origin master --rebase || true
 
-                docker build -t capstone:${BUILD_NUMBER} .
+        IMAGE_TAG=$(date +%s)
 
-                docker run -d -p 80:80 --name capstone capstone:${BUILD_NUMBER}
+        docker stop capstone || true
+        docker rm capstone || true
+
+        docker build -t capstone:${IMAGE_TAG} .
+
+        docker run -d -p 80:80 --name capstone capstone:${IMAGE_TAG}
 
 EOF
-                '''
-            }
-        }
+        '''
+    }
+}
     }
 }
