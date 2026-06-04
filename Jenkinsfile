@@ -17,8 +17,7 @@ pipeline {
 
         stage('Build') {
             steps {
-                sh 'echo "Building Docker image..."'
-                sh 'docker build -t capstone:${BUILD_NUMBER} .'
+                sh 'echo "Skipping local build (building on VM2)"'
             }
         }
 
@@ -34,19 +33,20 @@ pipeline {
             }
             steps {
                 sh '''
-                echo "Deploying to VM2..."
+                echo "Deploying on VM2..."
 
                 ssh -o StrictHostKeyChecking=no \
-                    -i $SSH_KEY \
-                    $REMOTE_USER@$REMOTE_HOST "
-                    
-                    cd website || git clone https://github.com/enghozifa/hshar.git website &&
-                    cd website &&
-                    git pull origin master &&
-                    
-                    docker stop capstone || true &&
-                    docker rm capstone || true &&
-                    docker run -d -p 80:80 --name capstone capstone:${BUILD_NUMBER}
+                -i $SSH_KEY \
+                $REMOTE_USER@$REMOTE_HOST "
+                
+                cd website || git clone https://github.com/enghozifa/hshar.git website &&
+                cd website &&
+                git pull origin master &&
+                
+                docker build -t capstone:${BUILD_NUMBER} . &&
+                docker stop capstone || true &&
+                docker rm capstone || true &&
+                docker run -d -p 80:80 --name capstone capstone:${BUILD_NUMBER}
                 "
                 '''
             }
