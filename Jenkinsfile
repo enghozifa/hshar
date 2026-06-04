@@ -20,26 +20,32 @@ pipeline {
                 sh 'echo "Test step"'
             }
         }
+stage('Deploy') {
+    when {
+        branch 'master'
+    }
+    steps {
+        sh '''
+        ssh -o StrictHostKeyChecking=no \
+        -i /var/jenkins_home/.ssh/id_rsa \
+        azureuser@20.81.11.55 "
+        if [ ! -d website ]; then
+            git clone https://github.com/enghozifa/hshar.git website
+        fi
 
-        stage('Deploy') {
-            when {
-                branch 'master'
-            }
-            steps {
-                sh '''
-                ssh -o StrictHostKeyChecking=no \
-                -i /var/jenkins_home/.ssh/id_rsa \
-                azureuser@20.81.11.55 "
-                cd website || git clone https://github.com/enghozifa/hshar.git website &&
-                cd website &&
-                git pull origin master || true &&
-                docker build -t capstone:${BUILD_NUMBER} . &&
-                docker stop capstone || true &&
-                docker rm capstone || true &&
-                docker run -d -p 80:80 --name capstone capstone:${BUILD_NUMBER}
-                "
-                '''
-            }
+        cd website
+        git pull origin master
+
+        docker stop capstone || true
+        docker rm capstone || true
+
+        docker build -t capstone:${BUILD_NUMBER} .
+
+        docker run -d -p 80:80 --name capstone capstone:${BUILD_NUMBER}
+        "
+        '''
+    }
+}
         }
     }
 }
