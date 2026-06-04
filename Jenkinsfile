@@ -33,33 +33,25 @@ pipeline {
 
                 set -e
 
-                echo "Starting deployment..."
+                echo "Deploying..."
 
-                # Get project
                 if [ ! -d website ]; then
                     git clone https://github.com/enghozifa/hshar.git website
                 fi
 
                 cd website
+                git pull origin master || true
 
-                git pull origin master
-
-                echo "Stopping old container..."
                 docker stop capstone || true
                 docker rm capstone || true
 
-                echo "Building new image..."
                 docker build -t capstone:${BUILD_NUMBER} .
 
-                echo "Running new container..."
                 docker run -d -p 80:80 --name capstone capstone:${BUILD_NUMBER}
-
-                echo "Deployment completed successfully"
 
 EOF
                 '''
             }
         }
     }
-}
 }
